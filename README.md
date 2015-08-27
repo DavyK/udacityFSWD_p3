@@ -28,13 +28,19 @@ run:
 To obtain the same starting dev environment. By default the unmodified starting code of this project will live in: 
 
     /vagrant/catalog
-
-To run this instance of the catalog app then enter:
+    
+To get this instance of the catalog app then enter:
 
     rm -r catalog
     git clone git@github.com:DavyK/udacityFSWD_p3.git
 
 
+Installation:
+-------------
+
+To setup the database first run:
+
+    python database_setup.py
 
 
 
