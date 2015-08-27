@@ -45,6 +45,10 @@ To setup the database first run:
 To add an initial category and item to the database (mostly for testing) run:
 
     python populate_database.py
+    
+To run the webserver that comes with flask enter:
+    
+    python application.py
 
 
 
