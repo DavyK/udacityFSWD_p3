@@ -42,6 +42,10 @@ To setup the database first run:
 
     python database_setup.py
 
+To add an initial category and item to the database (mostly for testing) run:
+
+    python populate_database.py
+
 
 
 
