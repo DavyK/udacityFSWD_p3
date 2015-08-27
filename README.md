@@ -10,13 +10,14 @@ The app provides JSON endpoints for retrieving the catalog's items and the categ
 
 Requirments:
 ------------
-Virtual Box 4.3.28
-Vagrant
-Python 2.7+
+* Virtual Box 4.3.28
+* Vagrant
+* Python 2.7+
 
 This code is developed inside a vagrant virtual box VM.
 
 run:
+
     git clone http://github.com/udacity/fullstack-nanodegree-vm fullstack
     cd fullstack/vagrant
     vagrant up
