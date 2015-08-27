@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Categories:</h1>
+<ul>
+    {% for cat in categories %}
+    <li>{{cat.title}}</li>
+    {% endfor %}
+</ul>
+
+<h1>Items:</h1>
+<ul>
+    {% for item in items %}
+    <li>{{item.title}} ({{item.category.title}})</li>
+    {% endfor %}
+</ul>
+{% endblock %}
