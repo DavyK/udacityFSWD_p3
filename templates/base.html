@@ -5,7 +5,9 @@
     <title>Catalog App</title>
 </head>
 <body>
+    <a href="{{url_for('index')}}">Home</a>
     <a href="{{url_for('add_item')}}">Add new Item</a>
+    <a href="{{url_for('add_category')}}">Add New Category</a>
     {% block content %}
     {% endblock %}
 </body>

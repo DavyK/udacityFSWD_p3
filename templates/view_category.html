@@ -1,14 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
-
-<h1>Categories:</h1>
-<ul>
-    {% for cat in categories %}
-    <li><a href="{{url_for('view_category', category_id=cat.id )}}">{{cat.title}}</a></li>
-    {% endfor %}
-</ul>
-
-<h1>Items:</h1>
+<h1>{{category.title}}</h1>
+<h2>Items:</h2>
 <ul>
     {% for item in items %}
     <li><a href="{{url_for('view_item', item_id=item.id )}}">{{item.title}}</a> ({{item.category.title}})</li>

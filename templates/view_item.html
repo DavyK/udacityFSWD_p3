@@ -2,7 +2,7 @@
 {% block content %}
 
 <h1>{{item.title}}</h1>
-<h4>({{item.category.title}})</h4>
+<h4><a href="{{url_for('view_category', category_id=item.category.id )}}">({{item.category.title}})</a></h4>
 <p>{{item.description}}</p>
-<img src="{{url_for('static', filename=item.image_path)}}"></img>
+<img src="{{url_for('static', filename=item.image_path)}}" height="100" width="100"/>
 {% endblock %}

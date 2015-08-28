@@ -61,6 +61,7 @@ def index():
 @app.route('/item/<int:item_id>/')
 def view_item(item_id):
     item = session.query(CatalogItem).get(item_id)
+
     return render_template('view_item.html', item=item)
 
 
@@ -84,12 +85,30 @@ def add_item():
             return redirect(url_for('view_item', item_id=new_item.id))
 
     categories = session.query(Category).all()
+
     return render_template('add_new_item.html', categories=categories)
 
 
-@app.route('/category/add/')
+@app.route('/category/<int:category_id>/')
+def view_category(category_id):
+    category = session.query(Category).get(category_id)
+    items = session.query(CatalogItem).filter_by(category_id=category_id)
+
+    return render_template('view_category.html', category=category, items=items)
+
+
+@app.route('/category/add/', methods=['GET', 'POST'])
 def add_category():
-    pass
+    if request.method == 'POST':
+        title = request.form['title']
+
+        new_category = Category(title=title)
+        session.add(new_category)
+        session.commit()
+
+        return redirect(url_for('view_category', category_id=new_category.id))
+
+    return render_template('add_new_category.html')
 
 
 if __name__=="__main__":
