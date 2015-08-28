@@ -1,8 +1,11 @@
 __author__ = 'davidkavanagh'
 
 import os
+import random
+import string
 
 from flask import Flask, render_template, redirect, request, url_for, send_from_directory
+from flask import session as login_session
 from werkzeug import secure_filename
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -39,7 +42,7 @@ def allowed_file(filename):
 def store_image_to_media(image_object):
     if image_object and allowed_file(image_object.filename):
         filename = secure_filename(image_object.filename)
-        # save path to image without static/ prepended to path
+        # save path to image without 'static/' prepended to path
         image_path = os.path.join(app.config['ITEM_IMAGES'], filename)
         # but actually save in static
         image_object.save(os.path.join(app.config['STATIC_DIR'], image_path))
@@ -57,6 +60,11 @@ def index():
 
     return render_template('index.html', categories=categories, items=items)
 
+@app.route('/login/')
+def show_login():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    login_session['state'] = state
+    return "The current session state is %s" % login_session['state']
 
 @app.route('/item/<int:item_id>/')
 def view_item(item_id):
@@ -112,5 +120,7 @@ def add_category():
 
 
 if __name__=="__main__":
+    #client-id: 1089899698683-8ub3ds0ra6fkjhliiri1j8jdm6d2a219.apps.googleusercontent.com
+    app.secret_key = 'this_is_a_very_secure_password'
     app.debug = True
     app.run(host='0.0.0.0', port=5000)

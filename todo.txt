@@ -5,7 +5,11 @@ Add pages to
     - delete item
 
 OAuth
+    -gconnect
+    -gdisconnect
+    -protect Add, Edit and Delete pages
 
 Styling
+    -bootstrap (duh?)
 
 JSON and Other API endpoint.
