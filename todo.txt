@@ -1,15 +1,11 @@
 Add pages to
-    - add category
-    - add item
-    - show single category
-    - show single item
     - edit category
     - edit item
     - delete category
     - delete item
 
-
-Figure out how flask deals with media and static.
-
-
 OAuth
+
+Styling
+
+JSON and Other API endpoint.
