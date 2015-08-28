@@ -24,7 +24,7 @@ class CatalogItem(Base):
     The image link field will be a path to a location on the filesystem where the image will be stored.
     More efficient than storing Blobs in the database.
     """
-    image_link = Column(String(200), nullable=False)
+    image_path = Column(String(200), nullable=False)
 
     category_id = Column(Integer, ForeignKey('Category.id'))
     category = relationship(Category)

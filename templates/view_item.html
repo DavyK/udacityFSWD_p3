@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>{{item.title}}</h1>
+<h4>({{item.category.title}})</h4>
+<p>{{item.description}}</p>
+<img src="{{url_for('static', filename=item.image_path)}}"></img>
+{% endblock %}
