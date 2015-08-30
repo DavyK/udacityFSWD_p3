@@ -3,12 +3,33 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>Catalog App</title>
+    {% block head %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+    {% endblock %}
+
 </head>
 <body>
     <a href="{{url_for('index')}}">Home</a>
     <a href="{{url_for('add_item')}}">Add new Item</a>
     <a href="{{url_for('add_category')}}">Add New Category</a>
+
+    <div class = 'flash'>
+		      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+
+        <ul>
+        {% for message in messages %}
+            <li> <strong> {{ message }} </strong> </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+
+    </div>
+
     {% block content %}
     {% endblock %}
+
 </body>
 </html>
