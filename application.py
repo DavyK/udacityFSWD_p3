@@ -62,6 +62,23 @@ def store_image_to_media(image_object):
 
         return None
 
+
+@app.context_processor
+def set_state():
+    """
+    In order to log the user in from any page, there must be a state token ready at all times.
+    This context processor checks if a state has already been generates for this session,
+    then generates (or retrieves) and inserts a state to all pages.
+    """
+    try:
+        state = login_session['state']
+    except KeyError:
+        state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+        login_session['state'] = state
+
+    return dict(STATE=state)
+
+
 @app.route('/')
 def index():
     # May limit to first whatever number
@@ -152,27 +169,19 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 100px; height: 100px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
-    return output
+
+    return 'Login Successful!'
 
 
 @app.route('/gdisconnect')
-def gdisconnect():
+def gdisconnect(next_url='/'):
         # Only disconnect a connected user.
     access_token = login_session.get('credentials')
     if access_token is None:
-        response = make_response(
-            json.dumps('Current user not connected.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        flash("No User connected!")
+        return redirect(next_url)
+
     #access_token = credentials.access_token
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     h = httplib2.Http()
@@ -186,15 +195,12 @@ def gdisconnect():
         del login_session['email']
         del login_session['picture']
 
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        flash("User logged out!")
+        return redirect(next_url)
     else:
         # For whatever reason, the given token was invalid.
-        response = make_response(
-            json.dumps('Failed to revoke token for given user.', 400))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        flash('Something went wrong there!')
+        return redirect(next_url)
 
 
 
