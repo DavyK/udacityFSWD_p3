@@ -13,6 +13,8 @@ Requirments:
 * Virtual Box 4.3.28
 * Vagrant
 * Python 2.7+
+* Flask 0.10.1
+* Flask-Login 0.3.0
 
 This code is developed inside a vagrant virtual box VM.
 
@@ -33,6 +35,10 @@ To get this instance of the catalog app then enter:
 
     rm -r catalog
     git clone git@github.com:DavyK/udacityFSWD_p3.git
+    
+Also install flask-login (may need need sudo):
+
+    pip install flask-login
 
 
 Installation:
@@ -53,6 +59,8 @@ Running the Application:
 To run the webserver that comes with flask enter:
     
     python application.py
+    
+By default this makes the web app accessible at http://0.0.0.0:5000
 
 
 Using the Website:

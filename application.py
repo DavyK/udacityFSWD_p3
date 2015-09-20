@@ -3,19 +3,24 @@ __author__ = 'davidkavanagh'
 import os
 import random
 import string
-
-from flask import Flask, render_template, redirect, request, url_for, make_response, flash
-from flask import session as login_session
-from werkzeug import secure_filename
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Category, CatalogItem
-
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 import requests
+from functools import wraps
+import filecmp
+from flask import Flask, render_template, redirect, request, url_for, make_response, flash, abort
+from flask import session as login_session
+
+from werkzeug import secure_filename
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
+
+from database_setup import Base, Category, CatalogItem
+
 
 app = Flask(__name__)
 
@@ -38,6 +43,30 @@ app.config.update({
     'ITEM_IMAGES': 'catalog_images'
 })
 
+@app.before_request
+def csrf_protect():
+    if request.method == "POST":
+        token = login_session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            abort(403)
+
+
+def generate_csrf_token():
+    if '_csrf_token' not in login_session:
+        login_session['_csrf_token'] = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    return login_session['_csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
+
+
+def login_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if 'username' not in login_session:
+            flash('You must login to access that page')
+            return redirect('/')
+        return func(*args, **kwargs)
+    return decorated_view
 
 def allowed_file(filename):
     allowed = False
@@ -52,20 +81,35 @@ def allowed_file(filename):
 def store_image_to_media(image_object):
     if image_object and allowed_file(image_object.filename):
         filename = secure_filename(image_object.filename)
+        print filename
         # save path to image without 'static/' prepended to path
-        image_path = os.path.join(app.config['ITEM_IMAGES'], filename)
+
+        db_path = os.path.join(app.config['ITEM_IMAGES'], filename)
         # but actually save in static
-        image_object.save(os.path.join(app.config['STATIC_DIR'], image_path))
+        save_path = os.path.join(app.config['STATIC_DIR'], db_path)
+        print db_path
+        print save_path
 
-        return image_path
+        if os.path.exists(save_path):
+            tmp_path = save_path + '_tmp'
+            image_object.save(tmp_path)
+            if not filecmp.cmp(save_path, tmp_path):
+                os.remove(save_path)
+                os.rename(tmp_path, save_path)
+
+        else:
+            image_object.save(save_path)
+
+        return db_path
+
     else:
-
         return None
 
 
 @app.context_processor
 def set_state():
     """
+    Create the anti-forgery state token
     In order to log the user in from any page, there must be a state token ready at all times.
     This context processor checks if a state has already been generates for this session,
     then generates (or retrieves) and inserts a state to all pages.
@@ -75,27 +119,14 @@ def set_state():
     except KeyError:
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         login_session['state'] = state
-
     return dict(STATE=state)
-
 
 @app.route('/')
 def index():
     # May limit to first whatever number
     categories = session.query(Category).all()
     items = session.query(CatalogItem).all()
-
     return render_template('index.html', categories=categories, items=items)
-
-
-# Create anti-forgery state token
-@app.route('/login/')
-def show_login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in xrange(32))
-    login_session['state'] = state
-    # return "The current session state is %s" % login_session['state']
-    return render_template('login.html', STATE=state)
 
 
 @app.route('/gconnect', methods=['POST'])
@@ -180,7 +211,7 @@ def gdisconnect(next_url='/'):
     access_token = login_session.get('credentials')
     if access_token is None:
         flash("No User connected!")
-        return redirect(next_url)
+        return redirect(next_url) # validate next_url
 
     #access_token = credentials.access_token
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
@@ -196,12 +227,12 @@ def gdisconnect(next_url='/'):
         del login_session['picture']
 
         flash("User logged out!")
-        return redirect(next_url)
+        return redirect(next_url)# validate next_url
     else:
         # For whatever reason, the given token was invalid.
+        login_session.clear()
         flash('Something went wrong there!')
-        return redirect(next_url)
-
+        return redirect(next_url)# validate next_url
 
 
 @app.route('/item/<int:item_id>/')
@@ -211,8 +242,11 @@ def view_item(item_id):
     return render_template('view_item.html', item=item)
 
 
+
 @app.route('/item/add/', methods=['GET','POST'])
+@login_required
 def add_item():
+
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
@@ -234,6 +268,48 @@ def add_item():
 
     return render_template('add_new_item.html', categories=categories)
 
+@app.route('/item/edit/<int:item_id>/', methods=['GET', 'POST'])
+@login_required
+def edit_item(item_id):
+    item = session.query(CatalogItem).get(item_id)
+
+    if request.method == 'POST':
+        title = request.form['title']
+        item.title = title
+        description = request.form['description']
+        item.description = description
+        category_id = int(request.form['category_id'])
+        category = session.query(Category).get(category_id)
+        item.category = category
+
+        image = request.files['image']
+        image_path = store_image_to_media(image)
+        if image_path is not None:
+            item.image_path = image_path
+
+        session.add(item)
+        session.commit()
+
+        return redirect(url_for('view_item', item_id=item.id))
+
+    categories = session.query(Category).all()
+
+
+    return render_template('edit_item.html', item=item, categories=categories)
+
+@app.route('/item/delete/<int:item_id>/', methods=['GET', 'POST'])
+@login_required
+def delete_item(item_id):
+    item = session.query(CatalogItem).get(item_id)
+    cat_id = item.category.id
+    if request.method == 'POST':
+        session.delete(item)
+        session.commit()
+        return redirect(url_for('view_category', category_id=cat_id))
+    else:
+        return render_template('delete_item.html', item=item)
+
+
 
 @app.route('/category/<int:category_id>/')
 def view_category(category_id):
@@ -244,6 +320,7 @@ def view_category(category_id):
 
 
 @app.route('/category/add/', methods=['GET', 'POST'])
+@login_required
 def add_category():
     if request.method == 'POST':
         title = request.form['title']
@@ -256,9 +333,24 @@ def add_category():
 
     return render_template('add_new_category.html')
 
+@app.route('/category/edit/<int:category_id>/')
+@login_required
+def edit_category(category_id):
+    pass
+
+@app.route('/category/delete/<int:category_id>/')
+@login_required
+def delete_category(category_id):
+    """
+    Should this function also delete it's items, warn the user about items without categories,
+    Only let users delete empty categories? Not specified in project rubric.
+    Currently deleting a category will delete all of it's items too, after a warning is issued!
+
+    """
+    pass
+
 
 if __name__=="__main__":
-    #client-id: 1089899698683-8ub3ds0ra6fkjhliiri1j8jdm6d2a219.apps.googleusercontent.com
     app.secret_key = 'this_is_a_very_secure_password'
     app.debug = True
     app.run(host='0.0.0.0', port=5000)

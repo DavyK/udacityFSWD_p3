@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Edit Item</h1>
+
+<form action="{{ url_for('edit_item', item_id=item.id)}}" method="POST" enctype=multipart/form-data>
+    <input type="text" name="title" value="{{item.title}}">
+    <input type="text" name="description" value="{{item.description}}">
+    <select name="category_id">
+        {% for cat in categories %}
+            {% if cat.id == item.category.id %}
+                <option value="{{cat.id}}" selected>{{cat.title}}</option>
+            {% else %}
+                <option value="{{cat.id}}">{{cat.title}}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+
+    <input type="file" name="image">
+    <img src="{{url_for('static', filename=item.image_path)}}" height="40" width="40"/>
+    <input type="submit" name="submit">
+</form>
+<a href="{{url_for('view_item', item_id=item.id)}}">Cancel</a>
+
+{% endblock %}

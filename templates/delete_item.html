@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Delete Item</h1>
+
+<h2>Are you sure you want to delete "{{item.title}}"?</h2>
+<form action="{{url_for('delete_item', item_id=item.id)}}" method="POST">
+    <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
+    <input type="submit" value="Delete!">
+</form>
+<a href="{{url_for('view_item', item_id=item.id)}}">Don't Delete!</a>
+
+
+{% endblock %}

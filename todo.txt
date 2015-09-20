@@ -1,15 +1,13 @@
 Add pages to
     - edit category
     - edit item
-    - delete category
+    - delete category - ask if want to delete all items in category, or reassign items to another category or a new one.
     - delete item
 
-OAuth
-    -gconnect
-    -gdisconnect
     -protect Add, Edit and Delete pages
 
 Styling
     -bootstrap (duh?)
+    -make flash messages disappear after three seconds
 
 JSON and Other API endpoint.
