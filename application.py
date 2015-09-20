@@ -13,7 +13,7 @@ from flask import session as login_session
 
 from werkzeug import secure_filename
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
 from oauth2client.client import flow_from_clientsecrets
@@ -43,20 +43,19 @@ app.config.update({
     'ITEM_IMAGES': 'catalog_images'
 })
 
-@app.before_request
-def csrf_protect():
-    if request.method == "POST":
-        token = login_session.pop('_csrf_token', None)
-        if not token or token != request.form.get('_csrf_token'):
-            abort(403)
-
 
 def generate_csrf_token():
     if '_csrf_token' not in login_session:
         login_session['_csrf_token'] = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
     return login_session['_csrf_token']
 
-app.jinja_env.globals['csrf_token'] = generate_csrf_token
+
+def check_for_csrf():
+    token = login_session.pop('_csrf_token', None)
+    if not token or token != request.form['_csrf_token']:
+        abort(403)
+    else:
+        return None
 
 
 def login_required(func):
@@ -67,6 +66,7 @@ def login_required(func):
             return redirect('/')
         return func(*args, **kwargs)
     return decorated_view
+
 
 def allowed_file(filename):
     allowed = False
@@ -120,13 +120,6 @@ def set_state():
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         login_session['state'] = state
     return dict(STATE=state)
-
-@app.route('/')
-def index():
-    # May limit to first whatever number
-    categories = session.query(Category).all()
-    items = session.query(CatalogItem).all()
-    return render_template('index.html', categories=categories, items=items)
 
 
 @app.route('/gconnect', methods=['POST'])
@@ -235,12 +228,31 @@ def gdisconnect(next_url='/'):
         return redirect(next_url)# validate next_url
 
 
+@app.route('/')
+def index():
+    # May limit to first whatever number
+    categories = session.query(Category).all()
+
+    cat_counts = session.query(
+        Category,
+        func.count(Category.id).label('num')
+    ).join(
+        CatalogItem
+    ).group_by(Category.id).order_by('num DESC')
+
+    for c in cat_counts:
+        print c.Category.title
+        print c.num
+
+    items = session.query(CatalogItem).all()
+
+    return render_template('index.html', categories=categories, items=items, cat_counts=cat_counts)
+
+
 @app.route('/item/<int:item_id>/')
 def view_item(item_id):
     item = session.query(CatalogItem).get(item_id)
-
     return render_template('view_item.html', item=item)
-
 
 
 @app.route('/item/add/', methods=['GET','POST'])
@@ -250,22 +262,20 @@ def add_item():
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
+
         category_id = int(request.form['category_id'])
-
         category = session.query(Category).get(category_id)
-        image = request.files['image']
 
+        image = request.files['image']
         image_path = store_image_to_media(image)
 
         if image_path is not None:
             new_item = CatalogItem(title=title, description=description, image_path=image_path, category=category)
             session.add(new_item)
             session.commit()
-
             return redirect(url_for('view_item', item_id=new_item.id))
 
     categories = session.query(Category).all()
-
     return render_template('add_new_item.html', categories=categories)
 
 @app.route('/item/edit/<int:item_id>/', methods=['GET', 'POST'])
@@ -274,10 +284,13 @@ def edit_item(item_id):
     item = session.query(CatalogItem).get(item_id)
 
     if request.method == 'POST':
+        #form checking???
         title = request.form['title']
         item.title = title
+
         description = request.form['description']
         item.description = description
+
         category_id = int(request.form['category_id'])
         category = session.query(Category).get(category_id)
         item.category = category
@@ -294,8 +307,8 @@ def edit_item(item_id):
 
     categories = session.query(Category).all()
 
-
     return render_template('edit_item.html', item=item, categories=categories)
+
 
 @app.route('/item/delete/<int:item_id>/', methods=['GET', 'POST'])
 @login_required
@@ -303,19 +316,21 @@ def delete_item(item_id):
     item = session.query(CatalogItem).get(item_id)
     cat_id = item.category.id
     if request.method == 'POST':
+
+        check_for_csrf()
+
         session.delete(item)
         session.commit()
+
         return redirect(url_for('view_category', category_id=cat_id))
     else:
-        return render_template('delete_item.html', item=item)
-
+        return render_template('delete_item.html', item=item, csrf_token=generate_csrf_token)
 
 
 @app.route('/category/<int:category_id>/')
 def view_category(category_id):
     category = session.query(Category).get(category_id)
     items = session.query(CatalogItem).filter_by(category_id=category_id)
-
     return render_template('view_category.html', category=category, items=items)
 
 
@@ -323,32 +338,15 @@ def view_category(category_id):
 @login_required
 def add_category():
     if request.method == 'POST':
-        title = request.form['title']
-
+        title = request.form['cat-title']
         new_category = Category(title=title)
+
         session.add(new_category)
         session.commit()
 
         return redirect(url_for('view_category', category_id=new_category.id))
 
     return render_template('add_new_category.html')
-
-@app.route('/category/edit/<int:category_id>/')
-@login_required
-def edit_category(category_id):
-    pass
-
-@app.route('/category/delete/<int:category_id>/')
-@login_required
-def delete_category(category_id):
-    """
-    Should this function also delete it's items, warn the user about items without categories,
-    Only let users delete empty categories? Not specified in project rubric.
-    Currently deleting a category will delete all of it's items too, after a warning is issued!
-
-    """
-    pass
-
 
 if __name__=="__main__":
     app.secret_key = 'this_is_a_very_secure_password'

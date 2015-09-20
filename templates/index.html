@@ -3,8 +3,8 @@
 
 <h1>Categories:</h1>
 <ul>
-    {% for cat in categories %}
-    <li><a href="{{url_for('view_category', category_id=cat.id )}}">{{cat.title}}</a></li>
+    {% for cat in cat_counts %}
+    <li><a href="{{url_for('view_category', category_id=cat.Category.id )}}">{{cat.Category.title}}</a> ({{cat.num}})</li>
     {% endfor %}
 </ul>
 
