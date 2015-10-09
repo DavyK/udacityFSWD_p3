@@ -8,7 +8,7 @@ import json
 import requests
 from functools import wraps
 import filecmp
-from flask import Flask, render_template, redirect, request, url_for, make_response, flash, abort
+from flask import Flask, render_template, redirect, request, url_for, make_response, flash, abort, jsonify
 from flask import session as login_session
 
 from werkzeug import secure_filename
@@ -314,7 +314,7 @@ def edit_item(item_id):
 @login_required
 def delete_item(item_id):
     item = session.query(CatalogItem).get(item_id)
-    cat_id = item.category.id
+    category_id = item.category.id
     if request.method == 'POST':
 
         check_for_csrf()
@@ -322,7 +322,7 @@ def delete_item(item_id):
         session.delete(item)
         session.commit()
 
-        return redirect(url_for('view_category', category_id=cat_id))
+        return redirect(url_for('view_category', category_id=category_id))
     else:
         return render_template('delete_item.html', item=item, csrf_token=generate_csrf_token)
 
@@ -338,7 +338,7 @@ def view_category(category_id):
 @login_required
 def add_category():
     if request.method == 'POST':
-        title = request.form['cat-title']
+        title = request.form['category-title']
         new_category = Category(title=title)
 
         session.add(new_category)
@@ -347,6 +347,29 @@ def add_category():
         return redirect(url_for('view_category', category_id=new_category.id))
 
     return render_template('add_new_category.html')
+
+
+#JSON API METHODS HERE
+@app.route('/item/<int:item_id>/json/', methods=['GET'])
+def get_item_json(item_id):
+    item = session.query(CatalogItem).get(item_id)
+    return jsonify(item.serialize())
+
+@app.route('/category/<int:category_id>/json/')
+def get_category_json(category_id):
+    category = session.query(Category).get(category_id)
+    items = session.query(CatalogItem).filter_by(category_id=category_id)
+    return jsonify(Category=category.serialize(), CategoryItems=[i.serialize() for i in items])
+
+@app.route('/item/json/')
+def get_all_items_json():
+    items = session.query(CatalogItem).all()
+    return jsonify(Items=[i.serialize() for i in items])
+
+@app.route('/category/json/')
+def get_all_categories_json():
+    cats = session.query(Category).all()
+    return jsonify(Categories=[i.serialize() for i in cats])
 
 if __name__=="__main__":
     app.secret_key = 'this_is_a_very_secure_password'
