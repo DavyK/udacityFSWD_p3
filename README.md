@@ -71,6 +71,23 @@ Using the Website:
 
 *JSON
 
+get a specific item in json format
+
+    /item/<item_id>/json/
+
+get all items
+
+    /item/json/
+
+get specific category and its items
+
+    /category/<category_id>/json/
+ 
+get all categories
+    
+    /category/json/
+   
+
 
 
 
