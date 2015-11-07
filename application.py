@@ -31,7 +31,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+    open('client_secret.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "UDACITY Catalog App"
 
 
@@ -66,6 +66,12 @@ def login_required(func):
             return redirect('/')
         return func(*args, **kwargs)
     return decorated_view
+
+@app.route('/login')
+def showLogin():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    login_session['state'] = state
+    return render_template('login.html', STATE=login_session['state'])
 
 
 def allowed_file(filename):
@@ -105,7 +111,7 @@ def store_image_to_media(image_object):
     else:
         return None
 
-
+'''
 @app.context_processor
 def set_state():
     """
@@ -120,7 +126,7 @@ def set_state():
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         login_session['state'] = state
     return dict(STATE=state)
-
+'''
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -134,7 +140,7 @@ def gconnect():
 
     try:
         # Upgrade the authorization code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -145,8 +151,7 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token)
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If there was an error in the access token info, abort.
@@ -226,6 +231,7 @@ def gdisconnect(next_url='/'):
         login_session.clear()
         flash('Something went wrong there!')
         return redirect(next_url)# validate next_url
+
 
 
 @app.route('/')
@@ -374,4 +380,4 @@ def get_all_categories_json():
 if __name__=="__main__":
     app.secret_key = 'this_is_a_very_secure_password'
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8000)
