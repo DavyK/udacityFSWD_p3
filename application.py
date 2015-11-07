@@ -356,23 +356,23 @@ def add_category():
 
 
 #JSON API METHODS HERE
-@app.route('/item/<int:item_id>/json/', methods=['GET'])
+@app.route('/api/json/item/<int:item_id>/', methods=['GET'])
 def get_item_json(item_id):
     item = session.query(CatalogItem).get(item_id)
     return jsonify(item.serialize())
 
-@app.route('/category/<int:category_id>/json/')
+@app.route('/api/json/category/<int:category_id>/')
 def get_category_json(category_id):
     category = session.query(Category).get(category_id)
     items = session.query(CatalogItem).filter_by(category_id=category_id)
     return jsonify(Category=category.serialize(), CategoryItems=[i.serialize() for i in items])
 
-@app.route('/item/json/')
+@app.route('/api/json/item/')
 def get_all_items_json():
     items = session.query(CatalogItem).all()
     return jsonify(Items=[i.serialize() for i in items])
 
-@app.route('/category/json/')
+@app.route('/api/json/category/')
 def get_all_categories_json():
     cats = session.query(Category).all()
     return jsonify(Categories=[i.serialize() for i in cats])
