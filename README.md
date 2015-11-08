@@ -55,37 +55,26 @@ To run the webserver that comes with flask enter:
     
     python application.py
     
-By default this makes the web app accessible at http://0.0.0.0:5000
+By default this makes the web app accessible at http://0.0.0.0:8000
 
-
-Using the Website:
-------------------
-
-*Login
-
-*Categories
-**CRUD
-
-*Items
-**CRUD
-
-*JSON
+JSON API:
+---------
 
 get a specific item in json format
 
-    /item/<item_id>/json/
+    /api/json/item/<item_id>/
 
 get all items
 
-    /item/json/
+    /api/json/item/
 
 get specific category and its items
 
-    /category/<category_id>/json/
+    /api/json//category/<category_id>/
  
 get all categories
     
-    /category/json/
+    /api/json/category/
    
 
 
