@@ -39,6 +39,8 @@ To get this instance of the catalog app then enter:
 Installation:
 -------------
 
+**NOTE: if you run the application with the included catalog.db database, you may skip these steps.
+
 To setup the database first run:
 
     python database_setup.py
