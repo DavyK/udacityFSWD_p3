@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>{{category.title}}</h1>
-<h2>Items:</h2>
-<ul>
+<h2 >{{category.title}} Items:</h2>
+<ul class="nav nav-pills nav-stacked">
     {% for item in items %}
-    <li><a href="{{url_for('view_item', item_id=item.id )}}">{{item.title}}</a> ({{item.category.title}})</li>
+    <li><a href="{{url_for('view_item', item_id=item.id )}}">{{item.title}}</a></li>
     {% endfor %}
 </ul>
 {% endblock %}

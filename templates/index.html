@@ -1,17 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h1>Categories:</h1>
-<ul>
-    {% for cat in cat_counts %}
-    <li><a href="{{url_for('view_category', category_id=cat.Category.id )}}">{{cat.Category.title}}</a> ({{cat.num}})</li>
-    {% endfor %}
-</ul>
 
-<h1>Items:</h1>
-<ul>
-    {% for item in items %}
-    <li><a href="{{url_for('view_item', item_id=item.id )}}">{{item.title}}</a> ({{item.category.title}})</li>
-    {% endfor %}
-</ul>
+        <h3>All Items:</h3>
+        <ul class="nav nav-pills nav-stacked">
+            {% for item in items %}
+            <li><a href="{{url_for('view_item', item_id=item.id )}}">{{item.title}} ({{item.category.title}})</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
 {% endblock %}

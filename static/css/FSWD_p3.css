@@ -1,0 +1,11 @@
+body{
+    margin-top: 70px;
+}
+
+.profile-pic{
+    width: 20px;
+    height: 20px;
+    border-radius: 150px;
+    -webkit-border-radius: 150px;
+    -moz-border-radius: 150px;
+}

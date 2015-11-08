@@ -3,23 +3,48 @@
 
 <h1>Edit Item</h1>
 
-<form action="{{ url_for('edit_item', item_id=item.id)}}" method="POST" enctype=multipart/form-data>
-    <input type="text" name="title" value="{{item.title}}">
-    <input type="text" name="description" value="{{item.description}}">
-    <select name="category_id">
-        {% for cat in categories %}
-            {% if cat.id == item.category.id %}
+
+<form action="{{ url_for('edit_item', item_id=item.id)}}" method="POST" enctype=multipart/form-data class="form-horizontal">
+    <div class="form-group">
+        <label class="control-label col-sm-2">Item Name:</label>
+        <div class="col-sm-8">
+            <input class="form-control" type="text" name="title" value="{{item.title}}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-sm-2">Description:</label>
+        <div class="col-sm-8">
+            <input class="form-control" type="text" name="description" value="{{item.description}}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-sm-2">Category:</label>
+        <div class="col-sm-8">
+        <select name="category_id" class="form-control">
+            {% for cat in categories %}
+                {% if cat.id == item.category.id %}
                 <option value="{{cat.id}}" selected>{{cat.title}}</option>
             {% else %}
                 <option value="{{cat.id}}">{{cat.title}}</option>
             {% endif %}
-        {% endfor %}
-    </select>
-
-    <input type="file" name="image">
-    <img src="{{url_for('static', filename=item.image_path)}}" height="40" width="40"/>
-    <input type="submit" name="submit">
+            {% endfor %}
+        </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-sm-2">Item Image:</label>
+        <div class="col-sm-8">
+            <img src="{{url_for('static', filename=item.image_path)}}" height="40" width="40"/>
+            <input type="file" name="image" class="btn btn-default">
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-8">
+            <input type="submit" name="Submit" class="btn btn-success">
+            <a class="btn btn-danger" href="{{url_for('view_item', item_id=item.id)}}">Cancel</a>
+        </div>
+    </div>
 </form>
-<a href="{{url_for('view_item', item_id=item.id)}}">Cancel</a>
+
 
 {% endblock %}

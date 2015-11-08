@@ -1,14 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h1>Delete Item</h1>
+<h3>Delete Item</h3>
 
-<h2>Are you sure you want to delete "{{item.title}}"?</h2>
-<form action="{{url_for('delete_item', item_id=item.id)}}" method="POST">
+<h4>Are you sure you want to delete "{{item.title}}"?</h4>
+<form action="{{url_for('delete_item', item_id=item.id)}}" method="POST" class="form-horizontol">
     <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
-    <input type="submit" value="Delete!">
+    <div class="col-sm-8">
+        <input class="btn btn-success" type="submit" value="Yes, I'm sure!">
+        <a class="btn btn-danger" href="{{url_for('view_item', item_id=item.id)}}">No, Don't Delete!</a>
+    </div>
+
+
+
+
 </form>
-<a href="{{url_for('view_item', item_id=item.id)}}">Don't Delete!</a>
+
 
 
 {% endblock %}

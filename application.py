@@ -46,7 +46,9 @@ app.config.update({
 
 def generate_csrf_token():
     if '_csrf_token' not in login_session:
-        login_session['_csrf_token'] = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+        login_session['_csrf_token'] = ''.join(
+            random.choice(string.ascii_uppercase + string.digits) for x in xrange(32)
+        )
     return login_session['_csrf_token']
 
 
@@ -58,17 +60,37 @@ def check_for_csrf():
         return None
 
 
-def login_required(func):
-    @wraps(func)
+def login_required(func_to_dec):
+    @wraps(func_to_dec)
     def decorated_view(*args, **kwargs):
         if 'username' not in login_session:
-            flash('You must login to access that page')
+            flash('You must login to access that page', 'alert-info')
             return redirect('/')
-        return func(*args, **kwargs)
+        return func_to_dec(*args, **kwargs)
     return decorated_view
 
+
+@app.context_processor
+def inject_categories():
+    # May limit to first whatever number
+    categories = session.query(Category).all()
+
+    cat_counts = session.query(
+        Category,
+        func.count(Category.id).label('num')
+    ).join(
+        CatalogItem
+    ).group_by(Category.id).order_by('num DESC')
+
+    for c in cat_counts:
+        print c.Category.title
+        print c.num
+
+    return dict(categories=categories, cat_counts=cat_counts)
+
+
 @app.route('/login')
-def showLogin():
+def show_login():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
     login_session['state'] = state
     return render_template('login.html', STATE=login_session['state'])
@@ -111,22 +133,6 @@ def store_image_to_media(image_object):
     else:
         return None
 
-'''
-@app.context_processor
-def set_state():
-    """
-    Create the anti-forgery state token
-    In order to log the user in from any page, there must be a state token ready at all times.
-    This context processor checks if a state has already been generates for this session,
-    then generates (or retrieves) and inserts a state to all pages.
-    """
-    try:
-        state = login_session['state']
-    except KeyError:
-        state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
-        login_session['state'] = state
-    return dict(STATE=state)
-'''
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -198,7 +204,7 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    flash("you are now logged in as %s" % login_session['username'])
+    flash("you are now logged in as %s" % login_session['username'], 'alert-success')
 
     return 'Login Successful!'
 
@@ -208,10 +214,10 @@ def gdisconnect(next_url='/'):
         # Only disconnect a connected user.
     access_token = login_session.get('credentials')
     if access_token is None:
-        flash("No User connected!")
-        return redirect(next_url) # validate next_url
+        flash("No User connected!", 'alert-danger')
+        return redirect(next_url)  # validate next_url
 
-    #access_token = credentials.access_token
+    # access_token = credentials.access_token
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
@@ -224,35 +230,20 @@ def gdisconnect(next_url='/'):
         del login_session['email']
         del login_session['picture']
 
-        flash("User logged out!")
-        return redirect(next_url)# validate next_url
+        flash("User logged out!", 'alert-success')
+        return redirect(next_url)  # validate next_url
     else:
         # For whatever reason, the given token was invalid.
         login_session.clear()
-        flash('Something went wrong there!')
-        return redirect(next_url)# validate next_url
-
+        flash('Something went wrong there!', 'alert-danger')
+        return redirect(next_url)  # validate next_url
 
 
 @app.route('/')
 def index():
-    # May limit to first whatever number
-    categories = session.query(Category).all()
-
-    cat_counts = session.query(
-        Category,
-        func.count(Category.id).label('num')
-    ).join(
-        CatalogItem
-    ).group_by(Category.id).order_by('num DESC')
-
-    for c in cat_counts:
-        print c.Category.title
-        print c.num
-
     items = session.query(CatalogItem).all()
 
-    return render_template('index.html', categories=categories, items=items, cat_counts=cat_counts)
+    return render_template('index.html', items=items)
 
 
 @app.route('/item/<int:item_id>/')
@@ -261,7 +252,7 @@ def view_item(item_id):
     return render_template('view_item.html', item=item)
 
 
-@app.route('/item/add/', methods=['GET','POST'])
+@app.route('/item/add/', methods=['GET', 'POST'])
 @login_required
 def add_item():
 
@@ -284,13 +275,14 @@ def add_item():
     categories = session.query(Category).all()
     return render_template('add_new_item.html', categories=categories)
 
+
 @app.route('/item/edit/<int:item_id>/', methods=['GET', 'POST'])
 @login_required
 def edit_item(item_id):
     item = session.query(CatalogItem).get(item_id)
 
     if request.method == 'POST':
-        #form checking???
+        # form checking???
         title = request.form['title']
         item.title = title
 
@@ -355,11 +347,12 @@ def add_category():
     return render_template('add_new_category.html')
 
 
-#JSON API METHODS HERE
+# JSON API METHODS HERE
 @app.route('/api/json/item/<int:item_id>/', methods=['GET'])
 def get_item_json(item_id):
     item = session.query(CatalogItem).get(item_id)
     return jsonify(item.serialize())
+
 
 @app.route('/api/json/category/<int:category_id>/')
 def get_category_json(category_id):
@@ -367,17 +360,20 @@ def get_category_json(category_id):
     items = session.query(CatalogItem).filter_by(category_id=category_id)
     return jsonify(Category=category.serialize(), CategoryItems=[i.serialize() for i in items])
 
+
 @app.route('/api/json/item/')
 def get_all_items_json():
     items = session.query(CatalogItem).all()
     return jsonify(Items=[i.serialize() for i in items])
+
 
 @app.route('/api/json/category/')
 def get_all_categories_json():
     cats = session.query(Category).all()
     return jsonify(Categories=[i.serialize() for i in cats])
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     app.secret_key = 'this_is_a_very_secure_password'
     app.debug = True
     app.run(host='0.0.0.0', port=8000)

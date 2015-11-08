@@ -15,7 +15,6 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(50), nullable=False)
 
-
     def serialize(self):
         return {
             'id': url_for('get_category_json', category_id=self.id, _external=True),
