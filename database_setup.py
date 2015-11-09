@@ -17,7 +17,11 @@ class Category(Base):
 
     def serialize(self):
         return {
-            'id': url_for('get_category_json', category_id=self.id, _external=True),
+            'id': url_for(
+                'get_category_json',
+                category_id=self.id,
+                _external=True
+            ),
             'title': self.title
         }
 
@@ -29,7 +33,8 @@ class CatalogItem(Base):
     description = Column(String(1000), nullable=False)
 
     """
-    The image link field will be a path to a location on the filesystem where the image will be stored.
+    The image link field will be a path to a location on
+    the filesystem where the image will be stored.
     More efficient than storing Blobs in the database.
     """
     image_path = Column(String(200), nullable=False)
@@ -41,10 +46,18 @@ class CatalogItem(Base):
         return {
             'id': url_for('get_item_json', item_id=self.id, _external=True),
             'title': self.title,
-            'discription': self.description,
-            'image_path': url_for('static', filename=self.image_path, _external=True),
+            'description': self.description,
+            'image_path': url_for(
+                'static',
+                filename=self.image_path,
+                _external=True
+            ),
             'category': {
-                'category_id': url_for('get_category_json', category_id=self.category_id, _external=True),
+                'category_id': url_for(
+                    'get_category_json',
+                    category_id=self.category_id,
+                    _external=True
+                ),
                 'cat_title': self.category.title
             }
         }

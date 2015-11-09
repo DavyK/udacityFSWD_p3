@@ -20,7 +20,8 @@ session.commit()
 
 my_first_item = CatalogItem(
     title='d20',
-    description='A 20 sided die, most commonly used in table-top roleplaying games, such as D&D.',
+    description="""A 20 sided die, most commonly used in
+     table-top role-playing games, such as D&D.""",
     image_path='catalog_images/d20.jpeg',
     category=my_first_category
 )

@@ -8,7 +8,8 @@ import json
 import requests
 from functools import wraps
 import filecmp
-from flask import Flask, render_template, redirect, request, url_for, make_response, flash, abort, jsonify
+from flask import Flask, render_template, redirect, request, url_for
+from flask import make_response, flash, abort, jsonify
 from flask import session as login_session
 
 from werkzeug import secure_filename
@@ -47,7 +48,9 @@ app.config.update({
 def generate_csrf_token():
     if '_csrf_token' not in login_session:
         login_session['_csrf_token'] = ''.join(
-            random.choice(string.ascii_uppercase + string.digits) for x in xrange(32)
+            random.choice(
+                string.ascii_uppercase + string.digits
+            ) for x in xrange(32)
         )
     return login_session['_csrf_token']
 
@@ -91,7 +94,11 @@ def inject_categories():
 
 @app.route('/login')
 def show_login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    state = ''.join(
+        random.choice(
+            string.ascii_uppercase + string.digits
+        ) for x in xrange(32)
+    )
     login_session['state'] = state
     return render_template('login.html', STATE=login_session['state'])
 
@@ -157,7 +164,10 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token)
+    url = (
+        'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+        % access_token
+    )
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If there was an error in the access token info, abort.
@@ -184,8 +194,9 @@ def gconnect():
     stored_credentials = login_session.get('credentials')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_credentials is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(json.dumps(
+            'Current user is already connected.'
+        ), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -204,9 +215,12 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    flash("you are now logged in as %s" % login_session['username'], 'alert-success')
+    flash(
+        "you are now logged in as %s" % login_session['username'],
+        "alert-success"
+    )
 
-    return 'Login Successful!'
+    return "Login Successful!"
 
 
 @app.route('/gdisconnect')
@@ -223,7 +237,7 @@ def gdisconnect(next_url='/'):
     result = h.request(url, 'GET')[0]
 
     if result['status'] == '200':
-        # Reset the user's sesson.
+        # Reset the user's session.
         del login_session['credentials']
         del login_session['gplus_id']
         del login_session['username']
@@ -267,7 +281,12 @@ def add_item():
         image_path = store_image_to_media(image)
 
         if image_path is not None:
-            new_item = CatalogItem(title=title, description=description, image_path=image_path, category=category)
+            new_item = CatalogItem(
+                title=title,
+                description=description,
+                image_path=image_path,
+                category=category
+            )
             session.add(new_item)
             session.commit()
             return redirect(url_for('view_item', item_id=new_item.id))
@@ -322,14 +341,22 @@ def delete_item(item_id):
 
         return redirect(url_for('view_category', category_id=category_id))
     else:
-        return render_template('delete_item.html', item=item, csrf_token=generate_csrf_token)
+        return render_template(
+            'delete_item.html',
+            item=item,
+            csrf_token=generate_csrf_token
+        )
 
 
 @app.route('/category/<int:category_id>/')
 def view_category(category_id):
     category = session.query(Category).get(category_id)
     items = session.query(CatalogItem).filter_by(category_id=category_id)
-    return render_template('view_category.html', category=category, items=items)
+    return render_template(
+        'view_category.html',
+        category=category,
+        items=items
+    )
 
 
 @app.route('/category/add/', methods=['GET', 'POST'])
@@ -358,7 +385,10 @@ def get_item_json(item_id):
 def get_category_json(category_id):
     category = session.query(Category).get(category_id)
     items = session.query(CatalogItem).filter_by(category_id=category_id)
-    return jsonify(Category=category.serialize(), CategoryItems=[i.serialize() for i in items])
+    return jsonify(
+        Category=category.serialize(),
+        CategoryItems=[i.serialize() for i in items]
+    )
 
 
 @app.route('/api/json/item/')
